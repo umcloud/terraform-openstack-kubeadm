@@ -35,8 +35,8 @@ resource "openstack_networking_floatingip_v2" "masterip" {
 
 resource "openstack_compute_instance_v2" "master" {
   name        = "${var.env_name}-master"
-  flavor_name = "${var.flavor}"
-  image_name  = "${var.image}"
+  flavor_name = "${var.master_flavor}"
+  image_name  = "${var.master_image}"
   key_pair    = "${openstack_compute_keypair_v2.k8s.name}"
 
   network {
@@ -104,8 +104,8 @@ resource "null_resource" "provision_master" {
 resource "openstack_compute_instance_v2" "worker" {
   count       = "${var.worker_count}"
   name        = "${var.env_name}-worker${count.index}"
-  flavor_name = "${var.flavor}"
-  image_name  = "${var.image}"
+  flavor_name = "${var.worker_flavor}"
+  image_name  = "${var.worker_image}"
   key_pair    = "${openstack_compute_keypair_v2.k8s.name}"
 
   network {

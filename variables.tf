@@ -14,11 +14,19 @@ variable "pubkey_name" {
   default = "rtg"
 }
 
-variable "flavor" {
+variable "master_flavor" {
   default = "1C-1GB-20GB"
 }
 
-variable "image" {
+variable "master_image" {
+  default = "Ubuntu 16.04 Xenial Xerus"
+}
+
+variable "worker_flavor" {
+  default = "1C-1GB-20GB"
+}
+
+variable "worker_image" {
   default = "Ubuntu 16.04 Xenial Xerus"
 }
 
