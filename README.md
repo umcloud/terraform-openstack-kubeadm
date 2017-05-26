@@ -8,7 +8,7 @@ Before you can start, you need to generate a fresh token for kubeadm to use. Ins
 
 Make sure you sourced your `openstack.rc` file before running `terraform apply`.
 
-By default one master and three worker nodes are bootstrapped. Please check [variables.tf](variables.tf) to see settings that you typically want to change.
+By default one master and three worker nodes are bootstrapped. Please check [variables.tf](variables.tf) to see settings that you typically want to change. All scripts assume Ubuntu 16.04 as the operating system on the master and workers.
 
 After terraform finishes, you will be able to connect to the master and run this:
 
@@ -22,7 +22,7 @@ staging-worker1   Ready     1m        v1.6.4
 staging-worker2   Ready     1m        v1.6.4
 ```
 
-This project removes the taint from the master that prohibits Kubernetes from scheduling pods on the master. 
+This project removes the taint from the master that prohibits Kubernetes from scheduling pods on the master.
 
 ## Non-production Usage
 
