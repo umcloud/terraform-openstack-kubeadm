@@ -104,3 +104,33 @@ spec:
         args:
         - /nginx-ingress-controller
         - --default-backend-service=$(POD_NAMESPACE)/default-http-backend
+        - --publish-service=$(POD_NAMESPACE)/nginx-ingress-controller-service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress-controller-service
+  namespace: nginx-ingress
+  labels:
+    k8s-app: nginx-ingress-controller-service
+spec:
+  ports:
+  - port: 80
+    targetPort: 80
+  selector:
+    k8s-app: nginx-ingress-controller
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: cluster-ingress
+spec:
+  rules:
+  - host: foo.bar.com
+    http:
+      paths:
+      - path: /foo
+        backend:
+          serviceName: some-svc
+          servicePort: 80
