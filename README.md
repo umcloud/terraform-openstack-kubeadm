@@ -24,6 +24,10 @@ staging-worker2   Ready     1m        v1.6.4
 
 This project removes the taint from the master that prohibits Kubernetes from scheduling pods on the master.
 
+## RBAC
+
+kubeadm bootstraps clusters with activated role-based access control (RBAC). The [required ACL configuration](assets/ingress-rbac.yml) for nginx ingress is quite complicated on the first glance. You can find some discussion around it [in this ticket](https://github.com/kubernetes/ingress/issues/575). Everything ingress is deployed into a separate namespace called "nginx-ingress" and uses a fresh service account "nginx-ingress-serviceaccount".
+
 ## Non-production Usage
 
 `kubeadm` is still in beta and will output the warning:
