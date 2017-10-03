@@ -71,33 +71,45 @@ resource "null_resource" "provision_master" {
     script = "assets/bootstrap.sh"
   }
 
+  provisioner "file" {
+    source      = "assets/10-kubeadm.conf"
+    destination = "/home/ubuntu/10-kubeadm.conf"
+  }
+
+  provisioner "file" {
+    source      = "assets/cloud-config"
+    destination = "/home/ubuntu/cloud-config"
+  }
+
   provisioner "remote-exec" {
     inline = [
-      "sudo kubeadm init --token ${var.k8s_token} --pod-network-cidr=10.244.0.0/16",
+      "sudo mv /home/ubuntu/10-kubeadm.conf /etc/systemd/system/kubelet.service.d/10-kubeadm.conf",
+      "sudo mv /home/ubuntu/cloud-config /etc/kubernetes/cloud-config",
+    ]
+  }
+
+  provisioner "local-exec" {
+    command = "cp assets/kubeadm.conf assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
+  }
+
+  provisioner "local-exec" {
+    command = "sed -i -e \"s/{{NODENAME}}/${openstack_compute_instance_v2.master.name}/g\" assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
+  }
+
+  provisioner "file" {
+    source      = "assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
+    destination = "/home/ubuntu/kubeadm.conf"
+  }
+
+  provisioner "local-exec" {
+    command = "rm assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo kubeadm init --config=kubeadm.conf",
       "sudo chown ubuntu /etc/kubernetes/admin.conf",
-      "KUBECONFIG=/etc/kubernetes/admin.conf kubectl taint nodes --all node-role.kubernetes.io/master-",
     ]
-  }
-
-  provisioner "file" {
-    source      = "assets/kube-flannel.yml"
-    destination = "/home/ubuntu/kube-flannel.yml"
-  }
-
-  provisioner "file" {
-    source      = "assets/kube-flannel-rbac.yml"
-    destination = "/home/ubuntu/kube-flannel-rbac.yml"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f kube-flannel-rbac.yml",
-      "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f kube-flannel.yml",
-    ]
-  }
-
-  provisioner "remote-exec" {
-    script = "assets/check-flannel.sh"
   }
 }
 
@@ -130,6 +142,23 @@ resource "null_resource" "provision_worker" {
   provisioner "remote-exec" {
     script = "assets/bootstrap.sh"
   }
+
+  provisioner "file" {
+    source      = "assets/10-kubeadm.conf"
+    destination = "/home/ubuntu/10-kubeadm.conf"
+  }
+
+  provisioner "file" {
+    source      = "assets/cloud-config"
+    destination = "/home/ubuntu/cloud-config"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mv /home/ubuntu/10-kubeadm.conf /etc/systemd/system/kubelet.service.d/10-kubeadm.conf",
+      "sudo mv /home/ubuntu/cloud-config /etc/kubernetes/cloud-config",
+    ]
+  }
 }
 
 resource "null_resource" "worker_join" {
@@ -143,9 +172,51 @@ resource "null_resource" "worker_join" {
     host         = "${element(openstack_compute_instance_v2.worker.*.network.0.fixed_ip_v4, count.index)}"
   }
 
+  provisioner "local-exec" {
+    command = "cp assets/kubeadm-node.conf assets/kubeadm-${element(openstack_compute_instance_v2.worker.*.name, count.index)}.conf"
+  }
+
+  provisioner "local-exec" {
+    command = "sed -i -e \"s/{{NODENAME}}/${element(openstack_compute_instance_v2.worker.*.name, count.index)}/g\" assets/kubeadm-${element(openstack_compute_instance_v2.worker.*.name, count.index)}.conf"
+  }
+
+  provisioner "file" {
+    source      = "assets/kubeadm-${element(openstack_compute_instance_v2.worker.*.name, count.index)}.conf"
+    destination = "/home/ubuntu/kubeadm.conf"
+  }
+
+  provisioner "local-exec" {
+    command = "rm assets/kubeadm-${element(openstack_compute_instance_v2.worker.*.name, count.index)}.conf"
+  }
+
   provisioner "remote-exec" {
     inline = [
-      "sudo kubeadm join --token ${var.k8s_token} ${openstack_compute_instance_v2.master.network.0.fixed_ip_v4}:6443",
+      "sudo kubeadm join --config kubeadm.conf ${openstack_compute_instance_v2.master.network.0.fixed_ip_v4}:6443",
     ]
+  }
+}
+
+resource "null_resource" "setup_flannel" {
+  depends_on = ["null_resource.worker_join"]
+
+  connection {
+    user        = "ubuntu"
+    private_key = "${file("${var.privkey}")}"
+    host        = "${openstack_networking_floatingip_v2.masterip.address}"
+  }
+
+  provisioner "file" {
+    source      = "assets/kube-flannel.yml"
+    destination = "/home/ubuntu/kube-flannel.yml"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f kube-flannel.yml",
+    ]
+  }
+
+  provisioner "remote-exec" {
+    script = "assets/check-flannel.sh"
   }
 }

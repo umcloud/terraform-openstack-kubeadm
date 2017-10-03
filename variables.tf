@@ -15,7 +15,7 @@ variable "pubkey_name" {
 }
 
 variable "master_flavor" {
-  default = "1C-1GB-20GB"
+  default = "2C-4GB-20GB"
 }
 
 variable "master_image" {
@@ -23,7 +23,7 @@ variable "master_image" {
 }
 
 variable "worker_flavor" {
-  default = "1C-1GB-20GB"
+  default = "2C-4GB-20GB"
 }
 
 variable "worker_image" {
@@ -35,7 +35,5 @@ variable "public_network" {
 }
 
 variable "worker_count" {
-  default = "3"
+  default = "2"
 }
-
-variable "k8s_token" {}
