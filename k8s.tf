@@ -107,7 +107,7 @@ resource "null_resource" "provision_master" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo kubeadm init --config=kubeadm.conf",
+      "sudo kubeadm reset && sudo kubeadm init --config=kubeadm.conf",
       "sudo chown ubuntu /etc/kubernetes/admin.conf",
     ]
   }
@@ -172,32 +172,15 @@ resource "null_resource" "worker_join" {
     host         = "${element(openstack_compute_instance_v2.worker.*.network.0.fixed_ip_v4, count.index)}"
   }
 
-  provisioner "local-exec" {
-    command = "cp assets/kubeadm-node.conf assets/kubeadm-${element(openstack_compute_instance_v2.worker.*.name, count.index)}.conf"
-  }
-
-  provisioner "local-exec" {
-    command = "sed -i -e \"s/{{NODENAME}}/${element(openstack_compute_instance_v2.worker.*.name, count.index)}/g\" assets/kubeadm-${element(openstack_compute_instance_v2.worker.*.name, count.index)}.conf"
-  }
-
-  provisioner "file" {
-    source      = "assets/kubeadm-${element(openstack_compute_instance_v2.worker.*.name, count.index)}.conf"
-    destination = "/home/ubuntu/kubeadm.conf"
-  }
-
-  provisioner "local-exec" {
-    command = "rm assets/kubeadm-${element(openstack_compute_instance_v2.worker.*.name, count.index)}.conf"
-  }
-
   provisioner "remote-exec" {
     inline = [
-      "sudo kubeadm join --config kubeadm.conf ${openstack_compute_instance_v2.master.network.0.fixed_ip_v4}:6443",
+      "sudo kubeadm reset && sudo kubeadm join --token 273809.56a7252f70b82714 ${openstack_compute_instance_v2.master.network.0.fixed_ip_v4}:6443",
     ]
   }
 }
 
 resource "null_resource" "setup_flannel" {
-  depends_on = ["null_resource.worker_join"]
+  depends_on = ["null_resource.provision_master"]
 
   connection {
     user        = "ubuntu"
@@ -212,6 +195,7 @@ resource "null_resource" "setup_flannel" {
 
   provisioner "remote-exec" {
     inline = [
+      "KUBECONFIG=/etc/kubernetes/admin.conf kubectl taint nodes --all node-role.kubernetes.io/master-",
       "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f kube-flannel.yml",
     ]
   }
