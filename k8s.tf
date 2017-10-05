@@ -76,6 +76,10 @@ resource "null_resource" "provision_master" {
     destination = "/home/ubuntu/10-kubeadm.conf"
   }
 
+  provisioner "local-exec" {
+    command = "./assets/cloud-config.sh"
+  }
+
   provisioner "file" {
     source      = "assets/cloud-config"
     destination = "/home/ubuntu/cloud-config"
