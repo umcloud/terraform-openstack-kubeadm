@@ -97,10 +97,6 @@ resource "null_resource" "provision_master" {
   }
 
   provisioner "local-exec" {
-    command = "cp assets/kubeadm.conf assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
-  }
-
-  provisioner "local-exec" {
     command = "sed -i -e \"s/{{TOKEN}}/${var.token}/g\" assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
   }
 
