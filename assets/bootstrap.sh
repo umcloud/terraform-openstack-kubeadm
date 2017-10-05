@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sudo apt-get update
-#sudo apt-get upgrade -y
+sudo apt-get upgrade -y
 sudo apt-get install -y apt-transport-https curl
 curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
 sudo sh -c "cat <<EOF >/etc/apt/sources.list.d/kubernetes.list

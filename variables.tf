@@ -37,3 +37,5 @@ variable "public_network" {
 variable "worker_count" {
   default = "2"
 }
+
+variable "token" {}

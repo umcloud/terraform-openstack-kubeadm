@@ -93,7 +93,11 @@ resource "null_resource" "provision_master" {
   }
 
   provisioner "local-exec" {
-    command = "sed -i -e \"s/{{NODENAME}}/${openstack_compute_instance_v2.master.name}/g\" assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
+    command = "cp assets/kubeadm.conf assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
+  }
+
+  provisioner "local-exec" {
+    command = "sed -i -e \"s/{{TOKEN}}/${var.token}/g\" assets/kubeadm-${openstack_compute_instance_v2.master.name}.conf"
   }
 
   provisioner "file" {
@@ -174,7 +178,7 @@ resource "null_resource" "worker_join" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo kubeadm reset && sudo kubeadm join --token 273809.56a7252f70b82714 ${openstack_compute_instance_v2.master.network.0.fixed_ip_v4}:6443",
+      "sudo kubeadm reset && sudo kubeadm join --token ${var.token} ${openstack_compute_instance_v2.master.network.0.fixed_ip_v4}:6443",
     ]
   }
 }
