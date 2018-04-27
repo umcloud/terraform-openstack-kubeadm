@@ -9,5 +9,5 @@ deb http://apt.kubernetes.io/ kubernetes-xenial main
 EOF"
 sudo apt-get update
 sudo apt-get install -y docker-engine
-sudo apt-get install -y --no-install-recommends kubeadm=1.7.5-00
+sudo apt-get install -y --no-install-recommends kubeadm=1.8.12-00
 sudo mkdir -p /etc/systemd/system/kubelet.service.d

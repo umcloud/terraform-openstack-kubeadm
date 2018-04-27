@@ -3,31 +3,31 @@ variable "env_name" {
 }
 
 variable "pubkey" {
-  default = "~/.ssh/id_rsa.pub"
+  default = "~/.ssh/cloud.key.pub"
 }
 
 variable "privkey" {
-  default = "~/.ssh/id_rsa"
+  default = "~/.ssh/cloud.key"
 }
 
 variable "pubkey_name" {
-  default = "rtg"
+  default = "cloud"
 }
 
 variable "master_flavor" {
-  default = "2C-4GB-20GB"
+  default = "m1.large"
 }
 
 variable "master_image" {
-  default = "Ubuntu 16.04 Xenial Xerus"
+  default = "Ubuntu 16.04 LTS x86_64"
 }
 
 variable "worker_flavor" {
-  default = "2C-4GB-20GB"
+  default = "m1.large"
 }
 
 variable "worker_image" {
-  default = "Ubuntu 16.04 Xenial Xerus"
+  default = "Ubuntu 16.04 LTS x86_64"
 }
 
 variable "public_network" {
@@ -35,7 +35,7 @@ variable "public_network" {
 }
 
 variable "worker_count" {
-  default = "2"
+  default = "1"
 }
 
 variable "token" {}
