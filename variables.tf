@@ -1,5 +1,5 @@
 variable "env_name" {
-  default = "staging"
+  default = "k8s"
 }
 
 variable "pubkey" {
@@ -18,24 +18,25 @@ variable "master_flavor" {
   default = "m1.large"
 }
 
-variable "master_image" {
-  default = "Ubuntu 16.04 LTS x86_64"
-}
-
 variable "worker_flavor" {
   default = "m1.large"
 }
 
-variable "worker_image" {
-  default = "Ubuntu 16.04 LTS x86_64"
-}
-
 variable "public_network" {
-  default = "ext-net"
+  default = "ext_net"
 }
 
 variable "worker_count" {
-  default = "1"
+  default = "5"
+}
+
+variable "dns_nameservers" {
+  default = ["8.8.8.8"]
+}
+
+variable "cluster_name" {
+  default = "kubernetes"
 }
 
 variable "token" {}
+

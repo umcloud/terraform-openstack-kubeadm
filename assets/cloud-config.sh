@@ -8,6 +8,7 @@ auth-url=$OS_AUTH_URL
 username=$OS_USERNAME
 password=$OS_PASSWORD
 region=$OS_REGION_NAME
+tenant-name=$OS_TENANT_NAME
 tenant-id=$OS_TENANT_ID
 domain-name=$OS_PROJECT_DOMAIN_NAME
 
