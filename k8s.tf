@@ -312,7 +312,7 @@ resource "null_resource" "fixup_neutron_ports" {
   }
 
   provisioner "local-exec" {
-    command = "neutron port-list -c id -f value|xargs -I@ neutron port-update @ --allowed-address-pairs type=dict list=true ip_address=10.244.0.0/16"
+    command = "neutron port-list -c id -f value|xargs -I@ neutron port-update @ --allowed-address-pairs type=dict list=true ip_address=10.0.0.0/8"
   }
 }
 

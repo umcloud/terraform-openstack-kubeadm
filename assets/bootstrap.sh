@@ -22,9 +22,9 @@ sudo tee /etc/docker/daemon.json << EOF
 EOF
 
 sudo tee /etc/udev/rules.d/71-docker-mtu.rules << EOF
-SUBSYSTEM=="net", ACTION=="add", NAME=="e*", RUN+="/sbin/iptables -I FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS  --clamp-mss-to-pmtu -o %k"
-SUBSYSTEM=="net", ACTION=="add", NAME=="e*", RUN+="/sbin/iptables -I OUTPUT  -p tcp --tcp-flags SYN,RST SYN -j TCPMSS  --clamp-mss-to-pmtu -o %k"
-#SUBSYSTEM=="net", ACTION=="add", NAME=="kube-bridge", RUN+="/sbin/ip link set mtu ${mtu} dev '%k'"
+#SUBSYSTEM=="net", ACTION=="add", KERNEL=="kube-bridge", RUN+="/sbin/ip link set mtu 1450 dev '%k'"
+# Force MTU down for devices w/1500 and addr_assign_type != permanent address (pre-set)
+SUBSYSTEM=="net", ACTION=="add", ATTR{mtu}=="1500", ATTR{addr_assign_type}!="0", RUN+="/sbin/ip link set mtu 1450 dev '%k'"
 EOF
 sudo udevadm control -R
 sudo udevadm trigger --attr-match=subsystem=net -c add
