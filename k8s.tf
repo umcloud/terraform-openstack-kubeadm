@@ -7,8 +7,7 @@ data "openstack_images_image_v2" "node_image" {
   owner = ""
   properties {
     "os_distro" = "ubuntu"
-    // 18.04 deploys ok, but fails actual networking (using kube-router)
-    "os_version" = "16.04"
+    "os_version" = "${var.os_version}"
   }
   sort_key = "size"
   sort_direction = "asc"
@@ -145,6 +144,22 @@ resource "local_file" "kubeadm_conf" {
   filename = "${path.cwd}/generated/kubeadm.conf"
 }
 
+data "template_file" "10_kubeadm_conf" {
+  template = "${file("${path.cwd}/assets/10-kubeadm.template.conf")}"
+  vars {
+     // TODO(jjo): fix, incomplete as it requires a kubelet restart :/
+     //            also 18.04 networking is busted, even after fixing resolving
+     //            See https://github.com/kubernetes/kubeadm/issues/273
+     kubelet_extra_args = "${var.os_version == "16.04" ? "": "--resolv-conf=/run/systemd/resolve/resolv.conf"}"
+  }
+}
+
+resource "local_file" "10_kubeadm_conf" {
+  content     = "${data.template_file.10_kubeadm_conf.rendered}"
+  filename = "${path.cwd}/generated/10-kubeadm.conf"
+}
+
+
 resource "null_resource" "provision_master" {
   depends_on = [
     "openstack_compute_floatingip_associate_v2.masterip",
@@ -161,7 +176,7 @@ resource "null_resource" "provision_master" {
   }
 
   provisioner "file" {
-    source      = "assets/10-kubeadm.conf"
+    source      = "${local_file.10_kubeadm_conf.filename}"
     destination = "/home/ubuntu/10-kubeadm.conf"
   }
 
@@ -242,7 +257,7 @@ resource "null_resource" "provision_worker" {
   }
 
   provisioner "file" {
-    source      = "assets/10-kubeadm.conf"
+    source      = "${local_file.10_kubeadm_conf.filename}"
     destination = "/home/ubuntu/10-kubeadm.conf"
   }
 

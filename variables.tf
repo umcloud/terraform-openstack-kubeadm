@@ -38,5 +38,10 @@ variable "cluster_name" {
   default = "kubernetes"
 }
 
+variable "os_version" {
+  // NOTE(jjo): 18.04 WIP, doesn't work yet
+  default = "16.04"
+}
+
 variable "token" {}
 
