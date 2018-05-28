@@ -17,13 +17,16 @@ spec:
         k8s-app: github-authn
     spec:
       containers:
-      - image: oursky/kubernetes-github-authn
+      - image: xjjo/kubernetes-github-authn
         imagePullPolicy: Always
         name: kubernetes-github-authn
         ports:
         - containerPort: 3000
           hostPort: 3000
           protocol: TCP
+        env:
+        - name: GITHUB_ORG
+          value: umcloud
       dnsPolicy: ClusterFirst
       hostNetwork: true
       nodeSelector:
