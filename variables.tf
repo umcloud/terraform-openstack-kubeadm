@@ -18,8 +18,16 @@ variable "master_flavor" {
   default = "m1.large"
 }
 
+variable "master_az" {
+  default = "nova"
+}
+
 variable "worker_flavor" {
   default = "m1.large"
+}
+
+variable "worker_az" {
+  default = "nova"
 }
 
 variable "public_network" {
@@ -27,7 +35,7 @@ variable "public_network" {
 }
 
 variable "worker_count" {
-  default = "5"
+  default = "6"
 }
 
 variable "dns_nameservers" {

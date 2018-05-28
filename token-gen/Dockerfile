@@ -1,6 +1,9 @@
-FROM fedora:rawhide
+FROM alpine
+RUN apk update
+RUN apk add --no-cache curl
+RUN RELEASE="$(curl -sSL https://dl.k8s.io/release/stable.txt)" && \
+    mkdir -p /opt/bin && cd /opt/bin && \
+    curl -L --remote-name-all https://storage.googleapis.com/kubernetes-release/release/${RELEASE}/bin/linux/amd64/kubeadm && \
+    chmod +x kubeadm
 
-COPY kubernetes.repo /etc/yum.repos.d
-
-RUN yum update -y && yum install -y kubeadm
-ENTRYPOINT kubeadm token generate
+ENTRYPOINT /opt/bin/kubeadm token generate

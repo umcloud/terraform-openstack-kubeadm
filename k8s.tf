@@ -107,6 +107,7 @@ resource "openstack_compute_instance_v2" "master" {
   flavor_name = "${var.master_flavor}"
   image_name  = "${data.openstack_images_image_v2.node_image.name}"
   key_pair    = "${openstack_compute_keypair_v2.k8s.name}"
+  availability_zone = "${var.master_az}"
 
   network {
     name = "${var.env_name}-net"
@@ -129,34 +130,26 @@ resource "openstack_compute_floatingip_associate_v2" "masterip" {
   fixed_ip    = "${openstack_compute_instance_v2.master.network.0.fixed_ip_v4}"
 }
 
-data "template_file" "kubeadm_conf" {
-  template = "${file("${path.cwd}/assets/kubeadm.template.conf")}"
+resource "random_string" "auth_token" {
+  length = 16
+  special = "false"
+}
+
+resource "template_dir" "configs" {
+  source_dir = "${path.cwd}/templates"
+  destination_dir = "${path.cwd}/generated"
   vars {
      token = "${var.token}"
      int_ip = "${openstack_compute_instance_v2.master.access_ip_v4}"
      ext_ip = "${openstack_networking_floatingip_v2.masterip.address}"
      cluster_name = "${var.cluster_name}"
-  }
-}
-
-resource "local_file" "kubeadm_conf" {
-  content     = "${data.template_file.kubeadm_conf.rendered}"
-  filename = "${path.cwd}/generated/kubeadm.conf"
-}
-
-data "template_file" "10_kubeadm_conf" {
-  template = "${file("${path.cwd}/assets/10-kubeadm.template.conf")}"
-  vars {
+     random_token = "${random_string.auth_token.result}"
+     master_node = "k8s-master"
      // TODO(jjo): fix, incomplete as it requires a kubelet restart :/
      //            also 18.04 networking is busted, even after fixing resolving
      //            See https://github.com/kubernetes/kubeadm/issues/273
      kubelet_extra_args = "${var.os_version == "16.04" ? "": "--resolv-conf=/run/systemd/resolve/resolv.conf"}"
   }
-}
-
-resource "local_file" "10_kubeadm_conf" {
-  content     = "${data.template_file.10_kubeadm_conf.rendered}"
-  filename = "${path.cwd}/generated/10-kubeadm.conf"
 }
 
 
@@ -176,7 +169,12 @@ resource "null_resource" "provision_master" {
   }
 
   provisioner "file" {
-    source      = "${local_file.10_kubeadm_conf.filename}"
+    source      = "${template_dir.configs.destination_dir}/webhook.config"
+    destination = "/home/ubuntu/webhook.config"
+  }
+
+  provisioner "file" {
+    source      = "${template_dir.configs.destination_dir}/10-kubeadm.conf"
     destination = "/home/ubuntu/10-kubeadm.conf"
   }
 
@@ -197,14 +195,21 @@ resource "null_resource" "provision_master" {
   }
 
   provisioner "file" {
-    source      = "${local_file.kubeadm_conf.filename}"
+    source      = "${template_dir.configs.destination_dir}/kubeadm.conf"
     destination = "/home/ubuntu/kubeadm.conf"
+  }
+
+  provisioner "file" {
+    source      = "${template_dir.configs.destination_dir}/github-authn.ds.yaml"
+    destination = "/home/ubuntu/github-authn.ds.yaml"
   }
 
   provisioner "remote-exec" {
     inline = [
-      // "sudo kubeadm reset && sudo kubeadm init --token=${var.token} --feature-gates CoreDNS=true --pod-network-cidr=10.244.0.0/16",
-      "sudo kubeadm reset && sudo kubeadm init --config=kubeadm.conf",
+      "sudo kubeadm reset",
+      "sudo mkdir -p /etc/kubernetes/pki",
+      "sudo mv /home/ubuntu/webhook.config /etc/kubernetes/pki/webhook.config",
+      "sudo kubeadm init --config=kubeadm.conf",
       "sudo chown ubuntu /etc/kubernetes/admin.conf",
       "sudo mkdir -p $HOME/.kube",
       "sudo ln -s /etc/kubernetes/admin.conf $HOME/.kube/config",
@@ -223,6 +228,7 @@ resource "openstack_compute_instance_v2" "worker" {
   flavor_name = "${var.worker_flavor}"
   image_name  = "${data.openstack_images_image_v2.node_image.name}"
   key_pair    = "${openstack_compute_keypair_v2.k8s.name}"
+  availability_zone = "${var.worker_az}"
 
   network {
     name = "${var.env_name}-net"
@@ -257,7 +263,7 @@ resource "null_resource" "provision_worker" {
   }
 
   provisioner "file" {
-    source      = "${local_file.10_kubeadm_conf.filename}"
+    source      = "${template_dir.configs.destination_dir}/10-kubeadm.conf"
     destination = "/home/ubuntu/10-kubeadm.conf"
   }
 
@@ -301,22 +307,29 @@ resource "null_resource" "setup_cni" {
     host        = "${openstack_networking_floatingip_v2.masterip.address}"
   }
 
-//   provisioner "file" {
-//     source      = "assets/kube-flannel.yml"
-//     destination = "/home/ubuntu/kube-flannel.yml"
-//   }
-
   provisioner "remote-exec" {
     inline = [
       "KUBECONFIG=/etc/kubernetes/admin.conf kubectl taint nodes --all node-role.kubernetes.io/master-",
-      // "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f kube-flannel.yml",
       "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f https://raw.githubusercontent.com/cloudnativelabs/kube-router/master/daemonset/kubeadm-kuberouter.yaml",
     ]
   }
 
   provisioner "remote-exec" {
-    // script = "assets/check-flannel.sh"
     script = "assets/check-kube-router.sh"
+  }
+}
+
+resource "null_resource" "setup_auth" {
+  depends_on = ["null_resource.provision_master"]
+  connection {
+    user        = "ubuntu"
+    private_key = "${file("${var.privkey}")}"
+    host        = "${openstack_networking_floatingip_v2.masterip.address}"
+  }
+  provisioner "remote-exec" {
+    inline = [
+      "KUBECONFIG=/etc/kubernetes/admin.conf kubectl apply -f github-authn.ds.yaml"
+    ]
   }
 }
 
