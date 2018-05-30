@@ -1,0 +1,18 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+  name: view-extras
+  namespace: ""
+  labels:
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - nodes
+  - componentstatuses
+  verbs:
+  - list
+  - get
+  - watch

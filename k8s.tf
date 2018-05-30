@@ -179,7 +179,7 @@ resource "null_resource" "provision_master" {
   }
 
   provisioner "local-exec" {
-    command = "./assets/cloud-config.sh"
+    command = "./assets/cloud-config.sh ${openstack_networking_subnet_v2.subnet_1.id}"
   }
 
   provisioner "file" {
@@ -336,13 +336,30 @@ resource "null_resource" "setup_auth" {
 resource "null_resource" "fixup_neutron_ports" {
   depends_on = ["null_resource.provision_master", "null_resource.provision_worker"]
   provisioner "local-exec" {
+    command = "neutron port-list -c id -f value|xargs -I@ neutron port-update @ --allowed-address-pairs type=dict list=true ip_address=10.0.0.0/8"
+  }
+}
+resource "null_resource" "fixup_user_ssh_keys" {
+  depends_on = ["null_resource.provision_master"]
+  provisioner "local-exec" {
+    command = "${path.cwd}/assets/update-ssh-keys.sh ${openstack_networking_floatingip_v2.masterip.address}"
+  }
+}
+resource "null_resource" "users_setup" {
+  depends_on = ["null_resource.provision_master"]
+
+  provisioner "local-exec" {
     command = "./assets/kubeconfig_get_merge.sh ubuntu@${openstack_networking_floatingip_v2.masterip.address}:.kube/config ${path.cwd}/generated/kube.master.conf"
   }
 
   provisioner "local-exec" {
-    command = "neutron port-list -c id -f value|xargs -I@ neutron port-update @ --allowed-address-pairs type=dict list=true ip_address=10.0.0.0/8"
+    command = "./assets/kubeconfig_create_public_cfgs.sh"
+  }
+  provisioner "local-exec" {
+    command = "./assets/setup-users.sh ${path.cwd}"
   }
 }
+
 
 output "master_ip" {
   value = "${openstack_networking_floatingip_v2.masterip.address}"
