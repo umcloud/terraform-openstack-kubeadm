@@ -12,6 +12,7 @@ rules:
   resources:
   - nodes
   - componentstatuses
+  - services/proxy
   verbs:
   - list
   - get
