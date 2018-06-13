@@ -17,3 +17,21 @@ rules:
   - list
   - get
   - watch
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - list
+  - watch
+# For helm
+- apiGroups:
+  - ""
+  resources:
+  - pods/portforward
+  verbs:
+  - get
+  - create
+  - patch
+  - delete

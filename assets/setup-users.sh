@@ -5,7 +5,7 @@ kubectl apply -f ${manifests_dir}/*.yaml
 )
 
 # Huristic: find "recent" users, navarrow is SPECIAL
-USERS=$(find /home/* -maxdepth 0 -mtime -180 -printf "%f\n"|sed s/navarrow/navarrow-um/)
+USERS=$(find /home/* -maxdepth 0 -mtime -180 -printf "%f\n"|sed 's/navarrow/navarrow-um/;s/mauricioryan/MauricioRyan/;')
 
 for user in ${USERS};do
   (set -x
