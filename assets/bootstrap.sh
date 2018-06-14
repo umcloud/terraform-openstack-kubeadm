@@ -46,4 +46,6 @@ EOF"
 sudo apt-get update -qy
 #sudo apt-get install -qy docker-engine
 sudo apt-get install -qy --no-install-recommends kubeadm
+# 'rbd' executable needs to be present at each node, for rbd volume provisioner
+sudo apt-get install -qy ceph-common
 sudo mkdir -p /etc/systemd/system/kubelet.service.d
